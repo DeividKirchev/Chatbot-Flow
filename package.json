@@ -1,0 +1,32 @@
+{
+  "name": "chatbot-flow",
+  "version": "1.0.0",
+  "description": "Chatbot Flow API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:dev": "nodemon --legacy-watch server.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeividKirchev/Chatbot-Flow.git"
+  },
+  "author": "Deyvid Kirchev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DeividKirchev/Chatbot-Flow/issues"
+  },
+  "homepage": "https://github.com/DeividKirchev/Chatbot-Flow#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.12.1",
+    "morgan": "^1.10.0",
+    "openai": "^4.87.3",
+    "restify": "^11.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9"
+  }
+}
