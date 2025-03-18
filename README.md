@@ -3,21 +3,14 @@
 ## Configuration
 ### Environment variables:<br/>
 
-<code>
-<b>OPENAI_API_KEY</b>=<OPENAI_API_KEY> # OpenAI API Key. Required for functionality <br/>
-<b>NODE_ENV</b>=[development | production] # Optional. Default is production.
-</code>
+><b>OPENAI_API_KEY</b>=<OPENAI_API_KEY> # OpenAI API Key. Required for functionality <br/>
+><b>NODE_ENV</b>=[development | production] # Optional. Default is production.
 
 ### Running the application
-Start the application using docker:<br/>
-<code>
-docker-compose up --build
-</code>
-<br/>
+Start the application using docker
+>docker-compose up --build
 
-Or using any of the npm scripts:<br/>
-<code>
-npm run start <br/>
-npm run start:dev <br/>
-<br/>
-</code>
+
+Or using any of the npm scripts:
+>npm run start
+>npm run start:dev
