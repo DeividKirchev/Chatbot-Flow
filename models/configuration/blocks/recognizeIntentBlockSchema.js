@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
-const ChatBlock = require("../chatBlockModel");
+const refIsValid = require("../../validators/refIsValid");
 
-const title = "Recognize intent";
-const description = "Recognize user intent and choose the next block";
+const type = "recognizeIntent";
 
 const recognizeIntentBlockSchema = new mongoose.Schema({
   intents: [
@@ -15,6 +14,7 @@ const recognizeIntentBlockSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "ChatBlock",
       },
+      originalNextBlock: String,
     },
     {
       required: true,
@@ -24,9 +24,26 @@ const recognizeIntentBlockSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "ChatBlock",
   },
+  originalErrorIntentNextBlock: {
+    type: String,
+    required: [true, "Next block for an error intent is required."],
+  },
 });
-ChatBlock.discriminator("recognizeIntent", recognizeIntentBlockSchema);
+
+// Validators
+recognizeIntentBlockSchema
+  .path("errorIntentNextBlock")
+  .validate(function (value, respond) {
+    const ChatBlock = require("../chatBlockModel");
+    return refIsValid(value, respond, ChatBlock);
+  }, "Invalid errorIntentNextBlock ID.");
+
+recognizeIntentBlockSchema
+  .path("intents.nextBlock")
+  .validate(function (value, respond) {
+    const ChatBlock = require("../chatBlockModel");
+    return refIsValid(value, respond, ChatBlock);
+  }, "Invalid nextBlock ID.");
 
 module.exports.schema = recognizeIntentBlockSchema;
-module.exports.title = title;
-module.exports.description = description;
+module.exports.type = type;
