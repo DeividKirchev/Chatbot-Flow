@@ -1,23 +1,13 @@
-const restify = require('restify');
+const restify = require("restify");
 const app = restify.createServer();
-const { Configuration } = require('./models');
+const configurationRouter = require("./routes/configurationRouter");
+const chatBlockRouter = require("./routes/chatBlockRoutes");
 app.use(restify.plugins.bodyParser());
 
-app.post("/", async (req, res) => {
-  const newConfiguration = await new Configuration(req.body).save();
-  res.send({
-    message: "Hello World",
-    body: req.body,
-    newConfiguration,
-  });
-});
+configurationRouter.applyRoutes(app, "/api/v1/configuration");
+chatBlockRouter.applyRoutes(app, "/api/v1/blocks");
 
-app.get("/", async (req, res) => {
-  const configurations = await Configuration.find();
-  res.send({
-    message: "Hello World",
-    configurations,
-  });
-});
+const errorHandler = require("./controllers/errors/errorHandler");
+app.on("restifyError", errorHandler);
 
 module.exports = app;

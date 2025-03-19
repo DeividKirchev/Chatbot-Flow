@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
-const ChatBlock = require("../chatBlockModel");
 
-const title = "Send message";
-const description = "Send message to the user";
+const type = "sendMessage";
 
 const sendMessageBlockSchema = new mongoose.Schema({
   message: {
@@ -10,8 +8,6 @@ const sendMessageBlockSchema = new mongoose.Schema({
     required: true,
   },
 });
-ChatBlock.discriminator("sendMessage", sendMessageBlockSchema);
 
 module.exports.schema = sendMessageBlockSchema;
-module.exports.title = title;
-module.exports.description = description;
+module.exports.type = type;
