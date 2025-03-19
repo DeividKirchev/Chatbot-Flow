@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 dotenv.config();
 
+mongoose.connect(process.env.MONGO_URI);
+
 const app = require('./app');
 
 if (process.env.NODE_ENV === "development") {
