@@ -24,7 +24,8 @@
     "morgan": "^1.10.0",
     "openai": "^4.87.3",
     "restify": "^11.1.0",
-    "restify-router": "^0.6.2"
+    "restify-router": "^0.6.2",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",

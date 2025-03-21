@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const ChatBlock = require("../configuration/chatBlockModel");
+const refIsValid = require("../validators/refIsValid");
+
 const messageSchema = new mongoose.Schema(
   {
     content: {

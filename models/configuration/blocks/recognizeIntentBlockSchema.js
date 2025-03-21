@@ -45,5 +45,20 @@ recognizeIntentBlockSchema
     return refIsValid(value, respond, ChatBlock);
   }, "Invalid nextBlock ID.");
 
+// Virtuals
+const execute = recognizeIntentBlockSchema.virtual("execute");
+execute.get(function (value, virtual, doc) {
+  return async (service, message) => {
+    const intentMessage = doc.intents[0].intent; // TODO: Implement intent recognition using OpenAI
+    const intentBlock = doc.intents.find(
+      (intentBlock) => intentBlock.intent === intentMessage
+    );
+    if (intentBlock) {
+      return { nextBlock: intentBlock.nextBlock };
+    }
+    return { nextBlock: doc.errorIntentNextBlock };
+  };
+});
+
 module.exports.schema = recognizeIntentBlockSchema;
 module.exports.type = type;
