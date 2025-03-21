@@ -3,7 +3,7 @@ const messageSchema = require("./messageSchema");
 const refIsValid = require("../validators/refIsValid");
 const Configuration = require("../configuration/configurationModel");
 
-const conversationSchema = new mongoose.Schema({
+const chatSchema = new mongoose.Schema({
   messages: [messageSchema],
   configuration: {
     type: mongoose.Schema.Types.ObjectId,
@@ -15,10 +15,10 @@ const conversationSchema = new mongoose.Schema({
 );
 
 // Validators
-conversationSchema.path("configuration").validate((value, respond) => {
+chatSchema.path("configuration").validate((value, respond) => {
   return refIsValid(value, respond, Configuration);
 }, "Invalid configuration ID.");
 
-const Conversation = mongoose.model("Conversation", conversationSchema);
+const Chat = mongoose.model("Chat", chatSchema);
 
-module.exports = Conversation;
+module.exports = Chat;

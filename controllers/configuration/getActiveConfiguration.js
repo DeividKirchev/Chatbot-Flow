@@ -1,14 +1,20 @@
 const ActiveConfiguration = require("../../models/configuration/activeConfigurationModel");
 const restifyErrors = require("restify-errors");
 
-const getActiveConfiguration = (req, res, next) => {
-  ActiveConfiguration.findOne()
-    .populate({
+const getActiveConfiguration = async () => {
+  const activeConfiguration = await ActiveConfiguration.findOne().populate(
+    {
       path: "configuration",
       populate: {
-        path: "blocks",
+        path: ["blocks", "entryBlock"],
       },
-    })
+    },
+  );
+  return activeConfiguration;
+};
+
+const getActiveConfigurationHandler = (req, res, next) => {
+  getActiveConfiguration()
     .then((activeConfiguration) => {
       if (!activeConfiguration) {
         throw new restifyErrors.NotFoundError("No active configuration found");
@@ -22,4 +28,5 @@ const getActiveConfiguration = (req, res, next) => {
     });
 };
 
-module.exports = getActiveConfiguration;
+module.exports.getActiveConfiguration = getActiveConfiguration;
+module.exports.getActiveConfigurationHandler = getActiveConfigurationHandler;

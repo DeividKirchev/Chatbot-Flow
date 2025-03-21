@@ -2,109 +2,121 @@ const ActiveConfiguration = require("../../models/configuration/activeConfigurat
 const ChatBlock = require("../../models/configuration/chatBlockModel");
 const Configuration = require("../../models/configuration/configurationModel");
 const restifyErrors = require("restify-errors");
-const crypto = require("crypto");
+const mongoose = require("mongoose");
 
 const setActiveConfiguration = async (req, res) => {
-  console.log(req.body);
-  const blocks = req.body.blocks;
+  try {
+    const blocks = req.body.blocks;
 
-  if (!blocks || blocks.length === 0) {
-    throw new restifyErrors.BadRequestError(
-      `Cannot set active configuration. Missing blocks.`
-    );
-  }
-
-  blocks.forEach((block) => {
-    block.originalNextBlock = block.nextBlock;
-    block.originalId = block._id;
-
-    if (!block.originalId) {
-      block.originalId = crypto.randomUUID();
+    if (!blocks || blocks.length === 0) {
+      throw new restifyErrors.BadRequestError(
+        `Cannot set active configuration. Missing blocks.`
+      );
     }
 
-    delete block.nextBlock;
-    delete block._id;
+    const originalIds = new Set();
+    blocks.forEach((block) => {
+      if (!block._id) {
+        block._id = new mongoose.Types.ObjectId();
+      }
 
-    if (block.type === "recognizeIntent") {
-      block.intents.forEach((intent) => {
-        intent.originalNextBlock = intent.nextBlock;
-        delete intent.nextBlock;
-      });
-      block.originalErrorIntentNextBlock = block.errorIntentNextBlock;
-      delete block.errorIntentNextBlock;
-    }
-  });
+      if (originalIds.has(block._id)) {
+        throw new restifyErrors.BadRequestError(
+          `Duplicate block id: ${block._id}`
+        );
+      }
+      originalIds.add(block._id);
 
-  const insertedBlocks = await ChatBlock.insertMany(blocks);
-  const nextMapping = {};
-  const updatedBlocks = [];
+      block.originalNextBlock = block.nextBlock;
+      block.originalId = block._id;
 
-  insertedBlocks.forEach((block) => {
-    let isBlockUpdated = false;
-    isBlockUpdated = mapNextBlocks(block, nextMapping, insertedBlocks, block);
+      delete block.nextBlock;
+      delete block._id;
 
-    // Recognise Intent Block
-    if (block.type === "recognizeIntent") {
-      block.intents.forEach((intent) => {
+      if (block.type === "recognizeIntent") {
+        block.intents.forEach((intent) => {
+          intent.originalNextBlock = intent.nextBlock;
+          delete intent.nextBlock;
+        });
+        block.originalErrorIntentNextBlock = block.errorIntentNextBlock;
+        delete block.errorIntentNextBlock;
+      }
+    });
+
+    const insertedBlocks = await ChatBlock.insertMany(blocks);
+    const nextMapping = {};
+    const updatedBlocks = [];
+
+    insertedBlocks.forEach((block) => {
+      let isBlockUpdated = false;
+      isBlockUpdated = mapNextBlocks(block, nextMapping, insertedBlocks, block);
+
+      // Recognise Intent Block
+      if (block.type === "recognizeIntent") {
+        block.intents.forEach((intent) => {
+          isBlockUpdated =
+            mapNextBlocks(intent, nextMapping, insertedBlocks, block) ||
+            isBlockUpdated;
+        });
         isBlockUpdated =
-          mapNextBlocks(intent, nextMapping, insertedBlocks, block) ||
-          isBlockUpdated;
-      });
-      isBlockUpdated =
-        mapNextBlocks(
-          block,
-          nextMapping,
-          insertedBlocks,
-          block,
-          "errorIntentNextBlock",
-          "originalErrorIntentNextBlock"
-        ) || isBlockUpdated;
+          mapNextBlocks(
+            block,
+            nextMapping,
+            insertedBlocks,
+            block,
+            "errorIntentNextBlock",
+            "originalErrorIntentNextBlock"
+          ) || isBlockUpdated;
+      }
+
+      if (isBlockUpdated) {
+        updatedBlocks.push(block);
+      }
+    });
+
+    if (updatedBlocks.length > 0) {
+      await ChatBlock.bulkSave(updatedBlocks);
     }
 
-    if (isBlockUpdated) {
-      updatedBlocks.push(block);
+    // Set entry block
+    let entryBlock = insertedBlocks.find(
+      (block) => block.originalId === req.body.entryBlock
+    );
+    if (!entryBlock && req.body.entryBlock) {
+      throw new restifyErrors.BadRequestError(
+        `Cannot set entry block. Missing block with id ${req.body.entryBlock}`
+      );
     }
-  });
+    if (!entryBlock) {
+      entryBlock = insertedBlocks.find(
+        (block) => block.originalId.toString() === blocks[0].originalId.toString()
+      );
+    }
 
-  if (updatedBlocks.length > 0) {
-    await ChatBlock.bulkSave(updatedBlocks);
+    const configuration = new Configuration({
+      blocks: insertedBlocks,
+      entryBlock: entryBlock._id,
+    });
+    const savedConfiguration = await configuration.save();
+
+    const activeConfiguration = await ActiveConfiguration.findOneAndUpdate(
+      {},
+      { $set: { configuration: savedConfiguration._id } },
+      { upsert: true, returnOriginal: false }
+    ).populate({
+      path: "configuration",
+      populate: {
+        path: "blocks",
+      },
+    });
+
+    res.send({
+      activeConfiguration,
+    });
+  } catch (error) {
+    console.error(error);
+    throw new restifyErrors.BadRequestError(error.message);
   }
-
-  // Set entry block
-  let entryBlock = insertedBlocks.find(
-    (block) => block.originalId === req.body.entryBlock
-  );
-  if (!entryBlock && req.body.entryBlock) {
-    throw new restifyErrors.BadRequestError(
-      `Cannot set entry block. Missing block with id ${req.body.entryBlock}`
-    );
-  }
-  if (!entryBlock) {
-    entryBlock = insertedBlocks.find(
-      (block) => block.originalId === blocks[0].originalId
-    );
-  }
-
-  const configuration = new Configuration({
-    blocks: insertedBlocks,
-    entryBlock: entryBlock._id,
-  });
-  const savedConfiguration = await configuration.save();
-
-  const activeConfiguration = await ActiveConfiguration.findOneAndUpdate(
-    {},
-    { $set: { configuration: savedConfiguration._id } },
-    { upsert: true, returnOriginal: false }
-  ).populate({
-    path: "configuration",
-    populate: {
-      path: "blocks",
-    },
-  });
-
-  res.send({
-    activeConfiguration,
-  });
 };
 
 const mapNextBlocks = (
