@@ -11,9 +11,13 @@ Response schema:
 
 */
 
+const OpenAIProcessor = require("../../LLM/openAI/openAIProcessor");
+const instructions = require("../../LLM/openAI/instructions");
+
 class ChatMovementController {
-  constructor(blocks, entryBlock, service, message, chat) {
-    this.blocks = blocks;
+  constructor(configuration, entryBlock, service, message, chat) {
+    this.configuration = configuration;
+    this.blocks = configuration.blocks;
     this.awaitingResponse = true;
     this.currentBlock = entryBlock;
     this.lastActiveBlock = entryBlock;
@@ -21,10 +25,11 @@ class ChatMovementController {
     this.message = message;
     this.chat = chat;
     this.canceled = false;
+    this.openAIProcessor = new OpenAIProcessor(instructions.recognizeIntent, "gpt-4o");
   }
 
   async saveChat() {
-    this.chat.lastBlock = this.lastActiveBlock._id;
+    this.chat.lastBlock = this.lastActiveBlock?._id || this.configuration.entryBlock;
     await this.chat.save();
   }
 
@@ -59,7 +64,8 @@ class ChatMovementController {
     if (!this.canceled) {
       const result = await this.currentBlock.execute(
         this.service,
-        this.message
+        this.message,
+        this.openAIProcessor
       );
 
       if (result.send) {
@@ -77,6 +83,7 @@ class ChatMovementController {
 
       if (!result.nextBlock) {
         this.service.send(JSON.stringify({ status: "finished" }));
+        this.lastActiveBlock = null;
         await this.saveChat();
         this.service.close();
         return { isFinished: true };

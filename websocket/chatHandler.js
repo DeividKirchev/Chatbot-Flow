@@ -18,7 +18,7 @@ const chatHandler = async (ws) => {
     const { chat, configuration, entryBlock, message } = connectionParsed;
 
     const chatMovementController = new ChatMovementController(
-      configuration.blocks,
+      configuration,
       entryBlock || configuration.entryBlock,
       ws,
       message,
