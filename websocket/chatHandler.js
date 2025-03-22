@@ -4,39 +4,38 @@ const {
 } = require("../controllers/configuration/getActiveConfiguration");
 const ChatMovementController = require("../controllers/chat/chatMovementController");
 
-module.exports = async (ws) => {
+const chatHandler = async (ws) => {
   try {
-    const activeConfiguration = await getActiveConfiguration();
-    const configuration = activeConfiguration.configuration;
-    const chat = new Chat({
-      messages: [],
-      configuration: activeConfiguration.configuration._id,
-    });
-    await chat.save();
+    const connectionParsed = await handleConnection(ws);
+
+    if (
+      !connectionParsed ||
+      !connectionParsed.chat ||
+      !connectionParsed.configuration
+    ) {
+      return;
+    }
+    const { chat, configuration, entryBlock, message } = connectionParsed;
 
     const chatMovementController = new ChatMovementController(
       configuration.blocks,
-      configuration.entryBlock,
+      entryBlock || configuration.entryBlock,
       ws,
-      null,
+      message,
       chat
     );
 
-    const clients = new Set();
-
-    clients.add(ws);
-    ws.send(
-      JSON.stringify({ status: "started", chatId: chat._id })
-    );
+    ws.send(JSON.stringify({ status: "started", chatId: chat._id }));
 
     chatMovementController.moveChatFlow();
+
+    // Handle events
     ws.on("message", (response) => {
       const parsedResponse = JSON.parse(response);
       chatMovementController.startMovement(parsedResponse.message);
     });
 
     ws.on("close", async () => {
-      clients.delete(ws);
       chatMovementController.cancelMovement();
       await chatMovementController.saveChat();
       ws.send(JSON.stringify({ status: "closed" }));
@@ -46,9 +45,70 @@ module.exports = async (ws) => {
       console.error("WebSocket error:", err);
       chatMovementController.cancelMovement();
       ws.send(JSON.stringify({ status: "error", error: err.message }));
+      ws.close();
     });
   } catch (error) {
     console.error("Error with chat:", error);
     ws.send(JSON.stringify({ status: "error", error: error.message }));
+    ws.close();
   }
 };
+
+const sendHistory = (ws, messages) => {
+  ws.send(JSON.stringify({ status: "history", messages: messages.sort((a, b) => a.sentAt - b.sentAt) }));
+};
+
+const handleConnection = async (ws) => {
+  let chat;
+  let configuration;
+  let entryBlock;
+  let message;
+
+  if (ws.connectionRequest?.params?.id) {
+    chat = await Chat.findById(ws.connectionRequest.params.id).populate({
+      path: "configuration",
+      populate: {
+        path: ["blocks", "entryBlock"],
+      },
+    }).populate("lastBlock");
+
+    if (!chat) {
+      ws.send(JSON.stringify({ status: "error", error: "Chat not found" }));
+      ws.close();
+      return null;
+    }
+
+    configuration = chat.configuration;
+
+    const lastMessage = chat.messages.reduce((lastMessage, message) => {
+      if (
+        message.isUserMessage &&
+        (!lastMessage || message.sentAt > lastMessage.sentAt)
+      ) {
+        return message;
+      }
+      return lastMessage;
+    }, null);
+    if (lastMessage) {
+      message = lastMessage.content;
+    }
+
+    if (chat.lastBlock) {
+      entryBlock = chat.lastBlock;
+    }
+
+    sendHistory(ws, chat.messages);
+  } else {
+    const activeConfiguration = await getActiveConfiguration();
+    configuration = activeConfiguration.configuration;
+    chat = new Chat({
+      messages: [],
+      configuration: activeConfiguration.configuration._id,
+    });
+    await chat.save();
+  }
+
+  return { chat, configuration, entryBlock, message };
+};
+
+module.exports = chatHandler;

@@ -13,18 +13,20 @@ const messageSchema = new mongoose.Schema(
       ref: "BaseBlock",
       required: true,
     },
+    isUserMessage: {
+      type: Boolean,
+      required: true,
+    },
+    sentAt: {
+      type: Date,
+      required: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Virtuals
-const isUserMessage = messageSchema.virtual("isUserMessage");
-isUserMessage.get(async function (value, virtual, doc) {
-  const block = await Block.findById(doc.block);
-  return block.type === "awaitResponse";
-});
 
 // Validators
 messageSchema.path("block").validate((value, respond) => {
