@@ -69,6 +69,7 @@ const setActiveConfiguration = async (req, res) => {
 
     const activeConfiguration = await ActiveConfiguration.findOneAndUpdate(
       {},
+      
       { $set: { configuration: savedConfiguration._id } },
       { upsert: true, returnOriginal: false }
     ).populate({
@@ -77,7 +78,6 @@ const setActiveConfiguration = async (req, res) => {
         path: "blocks",
       },
     });
-
     res.send({
       activeConfiguration,
     });

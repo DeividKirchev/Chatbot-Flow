@@ -1,5 +1,4 @@
 const WebSocket = require("ws");
-const chatHandler = require("./chatHandler");
 const clients = new Set();
 const websocketRoute = require("./websocketRouter");
 

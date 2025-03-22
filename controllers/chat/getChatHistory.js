@@ -6,11 +6,11 @@ const getChatHistory = async (req, res) => {
     if (!chat) {
       throw new restifyErrors.NotFoundError("Chat not found");
     }
-    res.send({ chat });
+    return res.send({ chat });
   }
 
   const chats = await Chat.find().sort({ createdAt: -1 });
-  res.send({ chats });
+  return res.send({ chats });
 };
 
 module.exports = getChatHistory;
