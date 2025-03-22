@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "start:dev": "nodemon --legacy-watch server.js",
-    "test": "jest"
+    "test": "jest --verbose --colors"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,8 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "nodemon": "^3.1.9"
+    "mockingoose": "^2.16.2",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.1.0"
   }
 }
