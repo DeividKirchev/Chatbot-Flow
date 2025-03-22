@@ -48,8 +48,14 @@ recognizeIntentBlockSchema
 // Virtuals
 const execute = recognizeIntentBlockSchema.virtual("execute");
 execute.get(function (value, virtual, doc) {
-  return async (service, message) => {
-    const intentMessage = doc.intents[0].intent; // TODO: Implement intent recognition using OpenAI
+  return async (service, message, openAIProcessor) => {
+    const input = `
+    {
+      intents: [${doc.intents.map((intent) => `"${intent.intent}"`).join(",")}],
+      userMessage: "${message}"
+    }
+    `;
+    const intentMessage = await openAIProcessor.process(input);
     const intentBlock = doc.intents.find(
       (intentBlock) => intentBlock.intent === intentMessage
     );
