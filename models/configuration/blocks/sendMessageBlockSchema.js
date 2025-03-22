@@ -11,7 +11,6 @@ const sendMessageBlockSchema = new mongoose.Schema({
 
 // Virtuals
 const execute = sendMessageBlockSchema.virtual("execute");
-
 execute.get(function (value, virtual, doc) {
   return async (service, message) => {
     return {

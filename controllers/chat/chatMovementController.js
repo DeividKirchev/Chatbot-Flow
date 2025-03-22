@@ -16,6 +16,7 @@ class ChatMovementController {
     this.blocks = blocks;
     this.awaitingResponse = true;
     this.currentBlock = entryBlock;
+    this.lastActiveBlock = entryBlock;
     this.service = service;
     this.message = message;
     this.chat = chat;
@@ -23,6 +24,7 @@ class ChatMovementController {
   }
 
   async saveChat() {
+    this.chat.lastBlock = this.lastActiveBlock._id;
     await this.chat.save();
   }
 
@@ -38,6 +40,8 @@ class ChatMovementController {
       const messageToSave = {
         content: this.message,
         block: this.currentBlock._id,
+        isUserMessage: true,
+        sentAt: new Date(),
       };
       this.chat.messages.push(messageToSave);
 
@@ -65,6 +69,8 @@ class ChatMovementController {
         const message = {
           content: result.send,
           block: this.currentBlock._id,
+          isUserMessage: false,
+          sentAt: new Date(),
         };
         this.chat.messages.push(message);
       }
@@ -76,15 +82,20 @@ class ChatMovementController {
         return { isFinished: true };
       }
 
-      this.currentBlock = this.blocks.find((block) =>
+      const newCurrentBlock = this.blocks.find((block) =>
         block._id.equals(result.nextBlock)
       );
 
       if (result.awaitResponse) {
         this.awaitingResponse = true;
+        this.lastActiveBlock = this.currentBlock; // In case we have consecutive awaitResponse blocks
+        this.currentBlock = newCurrentBlock;
         return { awaitingResponse: true };
+      } else {
+        this.currentBlock = newCurrentBlock;
+        this.lastActiveBlock = this.currentBlock;
+        return this.moveChatFlow();
       }
-      return this.moveChatFlow();
     }
   }
 }
