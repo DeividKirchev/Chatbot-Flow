@@ -1,0 +1,85 @@
+{
+  "blocks": [
+    {
+      "_id": "0",
+      "type": "sendMessage",
+      "message": "What are you looking for today?",
+      "nextBlock": "1"
+    },
+    {
+      "type": "awaitResponse",
+      "_id": "1",
+      "nextBlock": "2"
+    },
+    {
+      "_id": "2",
+      "type": "recognizeIntent",
+      "intents": [
+        {
+          "intent": "What is the weather?",
+          "nextBlock": "3"
+        },
+        {
+          "intent": "What is the time?",
+          "nextBlock": "4"
+        }
+      ],
+      "errorIntentNextBlock": "9"
+    },
+    {
+      "_id": "3",
+      "type": "sendMessage",
+      "message": "It's sunny",
+      "nextBlock": "5"
+    },
+    {
+      "_id": "4",
+      "type": "sendMessage",
+      "message": "It's 10pm",
+      "nextBlock": "5"
+    },
+    {
+      "_id": "5",
+      "type": "sendMessage",
+      "message": "Would you like anything else?",
+      "nextBlock": "6"
+    },
+    {
+      "type": "awaitResponse",
+      "_id": "6",
+      "nextBlock": "7"
+    },
+    {
+      "_id": "7",
+      "type": "recognizeIntent",
+      "intents": [
+        {
+          "intent": "Yes",
+          "nextBlock": "0"
+        },
+        {
+          "intent": "No",
+          "nextBlock": "8"
+        }
+      ],
+      "errorIntentNextBlock": "10"
+    },
+    {
+      "_id": "8",
+      "type": "sendMessage",
+      "message": "Have a nice day!"
+    },
+    {
+      "_id": "9",
+      "type": "sendMessage",
+      "message": "I don't understand what you mean.",
+      "nextBlock": "0"
+    },
+    {
+      "_id": "10",
+      "type": "sendMessage",
+      "message": "I don't understand what you mean.",
+      "nextBlock": "5"
+    }
+  ]
+}
