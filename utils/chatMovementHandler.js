@@ -11,9 +11,6 @@ Response schema:
 
 */
 
-const OpenAIProcessor = require("../LLM/openAI/openAIProcessor");
-const instructions = require("../LLM/openAI/instructions");
-
 class ChatMovementHandler {
   constructor(configuration, entryBlock, service, message, chat) {
     this.configuration = configuration;
@@ -25,11 +22,11 @@ class ChatMovementHandler {
     this.message = message;
     this.chat = chat;
     this.canceled = false;
-    this.openAIProcessor = new OpenAIProcessor(instructions.recognizeIntent, "gpt-4o");
   }
 
   async saveChat() {
-    this.chat.lastBlock = this.lastActiveBlock?._id || this.configuration.entryBlock;
+    this.chat.lastBlock =
+      this.lastActiveBlock?._id || this.configuration.entryBlock;
     await this.chat.save();
   }
 
@@ -37,22 +34,16 @@ class ChatMovementHandler {
     this.canceled = true;
   }
 
-  startMovement(message) {
+  continueMovement(message) {
     if (this.awaitingResponse && !this.canceled) {
       this.message = message || "";
       this.awaitingResponse = false;
-      this.moveChatFlow();
-      const messageToSave = {
+      this.saveMessage({
         content: this.message,
-        block: this.currentBlock._id,
+        block: this.lastActiveBlock._id,
         isUserMessage: true,
-        sentAt: new Date(),
-      };
-      this.chat.messages.push(messageToSave);
-
-      this.service.send(
-        JSON.stringify({ status: "received", message: this.message })
-      );
+      });
+      this.moveChatFlow();
     } else {
       this.service.send(
         JSON.stringify({ status: "notAwaitingResponse", message: this.message })
@@ -60,25 +51,44 @@ class ChatMovementHandler {
     }
   }
 
+  saveMessage(messageToSave) {
+    const message = {
+      ...messageToSave,
+      sentAt: new Date(),
+    };
+    this.chat.messages.push(message);
+  }
+
   async moveChatFlow() {
     if (!this.canceled) {
       const result = await this.currentBlock.execute(
         this.service,
-        this.message,
-        this.openAIProcessor
+        this.message
       );
+
+      const newCurrentBlock = result.nextBlock
+        ? this.blocks.find((block) => block._id.equals(result.nextBlock))
+        : null;
 
       if (result.send) {
         this.service.send(
           JSON.stringify({ status: "response", message: result.send })
         );
-        const message = {
+        this.saveMessage({
           content: result.send,
           block: this.currentBlock._id,
           isUserMessage: false,
-          sentAt: new Date(),
-        };
-        this.chat.messages.push(message);
+        });
+      } else if (result.awaitResponse) {
+        this.awaitingResponse = true;
+        this.lastActiveBlock = this.currentBlock; // In case we have consecutive awaitResponse blocks
+        this.currentBlock = newCurrentBlock;
+        return { awaitingResponse: true };
+      } else {
+        this.saveMessage({
+          block: this.currentBlock._id,
+          isUserMessage: false,
+        });
       }
 
       if (!result.nextBlock) {
@@ -87,17 +97,6 @@ class ChatMovementHandler {
         await this.saveChat();
         this.service.close();
         return { isFinished: true };
-      }
-
-      const newCurrentBlock = this.blocks.find((block) =>
-        block._id.equals(result.nextBlock)
-      );
-
-      if (result.awaitResponse) {
-        this.awaitingResponse = true;
-        this.lastActiveBlock = this.currentBlock; // In case we have consecutive awaitResponse blocks
-        this.currentBlock = newCurrentBlock;
-        return { awaitingResponse: true };
       } else {
         this.currentBlock = newCurrentBlock;
         this.lastActiveBlock = this.currentBlock;

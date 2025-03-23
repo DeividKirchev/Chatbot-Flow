@@ -3,6 +3,7 @@ const ChatBlock = require("../../models/configuration/chatBlockModel");
 const Configuration = require("../../models/configuration/configurationModel");
 const restifyErrors = require("restify-errors");
 const mongoose = require("mongoose");
+const applyFunctionToBlocks = require("../../utils/common/applyFunctionToBlocks");
 
 const setActiveConfiguration = async (req, res) => {
   try {
@@ -65,7 +66,7 @@ const setActiveConfiguration = async (req, res) => {
       entryBlock: entryBlock._id,
     });
     const savedConfiguration = await configuration.save();
-    
+
     const activeConfiguration = await ActiveConfiguration.findOneAndUpdate(
       {},
       { $set: { configuration: savedConfiguration._id } },
@@ -83,15 +84,6 @@ const setActiveConfiguration = async (req, res) => {
   } catch (error) {
     console.error(error);
     throw new restifyErrors.BadRequestError(error.message);
-  }
-};
-
-const applyFunctionToBlocks = (blocks, fieldFunctions) => {
-  for (const block of blocks) {
-    for (const key in fieldFunctions) {
-      if (key in block) fieldFunctions[key](block[key], block);
-    }
-    if (block.intents) applyFunctionToBlocks(block.intents, fieldFunctions);
   }
 };
 
