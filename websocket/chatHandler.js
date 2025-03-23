@@ -2,7 +2,7 @@ const Chat = require("../models/chat/chatModel");
 const {
   getActiveConfiguration,
 } = require("../controllers/configuration/getActiveConfiguration");
-const ChatMovementController = require("../controllers/chat/chatMovementController");
+const ChatMovementHandler = require("../utils/chatMovementHandler");
 
 const chatHandler = async (ws) => {
   try {
@@ -17,7 +17,7 @@ const chatHandler = async (ws) => {
     }
     const { chat, configuration, entryBlock, message } = connectionParsed;
 
-    const chatMovementController = new ChatMovementController(
+    const chatMovementHandler = new ChatMovementHandler(
       configuration,
       entryBlock || configuration.entryBlock,
       ws,
@@ -27,23 +27,24 @@ const chatHandler = async (ws) => {
 
     ws.send(JSON.stringify({ status: "started", chatId: chat._id }));
 
-    chatMovementController.moveChatFlow();
+    chatMovementHandler.moveChatFlow();
 
     // Handle events
     ws.on("message", (response) => {
       const parsedResponse = JSON.parse(response);
-      chatMovementController.startMovement(parsedResponse.message);
+      chatMovementHandler.startMovement(parsedResponse.message);
     });
 
     ws.on("close", async () => {
-      chatMovementController.cancelMovement();
-      await chatMovementController.saveChat();
+      chatMovementHandler.cancelMovement();
+      await chatMovementHandler.saveChat();
       ws.send(JSON.stringify({ status: "closed" }));
     });
 
     ws.on("error", (err) => {
       console.error("WebSocket error:", err);
-      chatMovementController.cancelMovement();
+      chatMovementHandler.cancelMovement();
+      chatMovementHandler.saveChat();
       ws.send(JSON.stringify({ status: "error", error: err.message }));
       ws.close();
     });
@@ -105,7 +106,6 @@ const handleConnection = async (ws) => {
       messages: [],
       configuration: activeConfiguration.configuration._id,
     });
-    await chat.save();
   }
 
   return { chat, configuration, entryBlock, message };
