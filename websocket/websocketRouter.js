@@ -1,4 +1,4 @@
-const chatHandler = require("./chatHandler");
+const chatHandler = require("./chat/chatHandler");
 const websocketRouteParams = require("./paramParser");
 
 const routeHandlers = {

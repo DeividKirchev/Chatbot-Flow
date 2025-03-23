@@ -1,8 +1,8 @@
-const Chat = require("../models/chat/chatModel");
+const Chat = require("../../models/chat/chatModel");
 const {
   getActiveConfiguration,
-} = require("../controllers/configuration/getActiveConfiguration");
-const ChatMovementHandler = require("../utils/chatMovementHandler");
+} = require("../../controllers/configuration/getActiveConfiguration");
+const ChatMovementHandler = require("../../utils/chatMovementHandler");
 
 const chatHandler = async (ws) => {
   try {

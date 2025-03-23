@@ -2,8 +2,10 @@ const WebSocket = require("ws");
 const clients = new Set();
 const websocketRoute = require("./websocketRouter");
 
+let wss;
+
 module.exports.setup = (server) => {
-  const wss = new WebSocket.Server({ noServer: true });
+  wss = new WebSocket.Server({ noServer: true });
 
   server.server.on("upgrade", (request, socket, head) => {
     console.log("Received WebSocket upgrade request:", request.url);
@@ -33,3 +35,5 @@ module.exports.setup = (server) => {
 
   console.log("WebSocket server is running on /ws/chat");
 };
+
+module.exports.wss = wss;
