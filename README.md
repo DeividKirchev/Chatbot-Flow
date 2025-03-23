@@ -1,13 +1,16 @@
 # Configuration
 ### Environment variables
-><b>OPENAI_API_KEY</b>=<OPENAI_API_KEY> # OpenAI API Key. Required for functionality\
-><b>NODE_ENV</b>=[development | production] # Optional. Default is production.
+><b>OPENAI_API_KEY</b>=<OPENAI_API_KEY> # OpenAI API Key. Required for functionality
 
 ### Running the application
-Start the application using docker. Example command:
->docker-compose up --build
+Start the application using docker.\
+**Production:**
+>docker-compose up app-prod --build
 
-### Running tests
+**Dev mode:**
+>docker-compose up app-dev --build
+
+**Running**
 Example command using docker:
 >docker build --target test --rm . --no-cache --progress=plain
 
