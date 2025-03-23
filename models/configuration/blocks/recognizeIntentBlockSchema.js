@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 const refIsValid = require("../../validators/refIsValid");
+const getResponse = require("../../../LLM/openAI/getResponse");
+const {
+  recognizeIntent: instructions,
+} = require("../../../LLM/openAI/instructions");
 
 const type = "recognizeIntent";
 
@@ -48,14 +52,14 @@ recognizeIntentBlockSchema
 // Virtuals
 const execute = recognizeIntentBlockSchema.virtual("execute");
 execute.get(function (value, virtual, doc) {
-  return async (service, message, openAIProcessor) => {
+  return async (service, message) => {
     const input = `
     {
       intents: [${doc.intents.map((intent) => `"${intent.intent}"`).join(",")}],
       userMessage: "${message}"
     }
     `;
-    const intentMessage = await openAIProcessor.process(input);
+    const intentMessage = await getResponse(input, instructions);
     const intentBlock = doc.intents.find(
       (intentBlock) => intentBlock.intent === intentMessage
     );

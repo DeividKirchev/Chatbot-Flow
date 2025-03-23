@@ -32,7 +32,7 @@ const chatHandler = async (ws) => {
     // Handle events
     ws.on("message", (response) => {
       const parsedResponse = JSON.parse(response);
-      chatMovementHandler.startMovement(parsedResponse.message);
+      chatMovementHandler.continueMovement(parsedResponse.message);
     });
 
     ws.on("close", async () => {
@@ -56,7 +56,16 @@ const chatHandler = async (ws) => {
 };
 
 const sendHistory = (ws, messages) => {
-  ws.send(JSON.stringify({ status: "history", messages: messages.sort((a, b) => a.sentAt - b.sentAt) }));
+  const sortedMessages = messages
+    .filter((message) => message.content)
+    .map((message) => ({
+      content: message.content,
+      _id: message._id,
+      isUserMessage: message.isUserMessage,
+      sentAt: message.sentAt,
+    }))
+    .sort((a, b) => a.sentAt - b.sentAt);
+  ws.send(JSON.stringify(sortedMessages));
 };
 
 const handleConnection = async (ws) => {
@@ -66,12 +75,14 @@ const handleConnection = async (ws) => {
   let message;
 
   if (ws.connectionRequest?.params?.id) {
-    chat = await Chat.findById(ws.connectionRequest.params.id).populate({
-      path: "configuration",
-      populate: {
-        path: ["blocks", "entryBlock"],
-      },
-    }).populate("lastBlock");
+    chat = await Chat.findById(ws.connectionRequest.params.id)
+      .populate({
+        path: "configuration",
+        populate: {
+          path: ["blocks", "entryBlock"],
+        },
+      })
+      .populate("lastBlock");
 
     if (!chat) {
       ws.send(JSON.stringify({ status: "error", error: "Chat not found" }));
