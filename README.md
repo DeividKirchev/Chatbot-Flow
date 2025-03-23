@@ -44,19 +44,19 @@ Gets the current active chatbot configuration with all its blocks.
 No request body required.
 
 **Response schema:**
-```json
+```typescript
 {
   "activeConfiguration": {
-    "_id": "ObjectId",
+    "_id": ObjectId,
     "configuration": {
-      "_id": "ObjectId",
-      "blocks": [Chatblock],
-      "entryBlock": "String",
-      "createdAt": "Date",
-      "updatedAt": "Date"
+      "_id": ObjectId,
+      "blocks": [ChatBlock], // ChatBlock schema in /api/v1/blocks
+      "entryBlock": ChatBlock, // ChatBlock schema in /api/v1/blocks
+      "createdAt": Date,
+      "updatedAt": Date
     },
-    "createdAt": "Date",
-    "updatedAt": "Date"
+    "createdAt": Date,
+    "updatedAt": Date
   }
 }
 ```
@@ -66,7 +66,7 @@ No request body required.
 
 ***Sample response:***
 
-```json
+```typescript
 {
   "activeConfiguration": {
     "_id": "67db434be74aa7a252f58934",
@@ -117,68 +117,69 @@ Sets the active configuration for the chatbot, replacing any existing active con
 All provided ids get moved to 'original' fields (originalNextBlock, originalId etc.) and get generated MongoDB ones.
 
 **Request schema:**
-```json
+```typescript
 {
   "blocks": [
     {
       // SendMessage block
       "type": "sendMessage",
-      "_id": "ObjectId", // Optional, auto-generated if not provided
-      "message": "String", // Required
-      "nextBlock": "ObjectId" // Optional - ID of next block, null if end of conversation
+      "_id": ObjectId, // Optional, auto-generated if not provided
+      "message": String, // Required
+      "nextBlock": ObjectId // Optional - ID of next block, null if end of conversation
     },
     // OR AwaitResponse block
     {
       "type": "awaitResponse",
-      "_id": "ObjectId", // Optional, auto-generated if not provided
-      "nextBlock": "ObjectId" // Required - ID of block to execute after receiving response
+      "_id": ObjectId, // Optional, auto-generated if not provided
+      "nextBlock": ObjectId // Required - ID of block to execute after receiving response
     },
     // OR RecognizeIntent block
     {
       "type": "recognizeIntent",
-      "_id": "ObjectId", // Optional, auto-generated if not provided
+      "_id": ObjectId, // Optional, auto-generated if not provided
       "intents": [ // Required
         {
-          "intent": "String", // Required - The intent phrase
-          "nextBlock": "ObjectId" // Required - ID of block to execute if this intent matches
+          "intent": String, // Required - The intent phrase
+          "nextBlock": ObjectId // Required - ID of block to execute if this intent matches
         }
       ],
-      "errorIntentNextBlock": "ObjectId" // Required - ID of block to execute when no intent matches
+      "errorIntentNextBlock": ObjectId // Required - ID of block to execute when no intent matches
     }
   ],
-  "entryBlock": "String" // Optional - ID of the first block to execute, defaults to first block if not provided
+  "entryBlock": String // Optional - ID of the first block to execute, defaults to first block if not provided
 }
 ```
 ***Response schema***
-```json
+```typescript
 {
   "activeConfiguration": {
-    "_id": "ObjectId",
+    "_id": ObjectId,
     "configuration": {
-      "_id": "ObjectId",
+      "_id": ObjectId,
       "blocks": [
         {
-          "_id": "ObjectId",
-          "type": "String",
+          "_id": ObjectId,
+          "originalId": ObjectId, // The original id which was passed on setting the configuration
+          "type": String,
           // Fields differ based on block type (as above)
-          "createdAt": "Date",
-          "updatedAt": "Date"
+          "createdAt": Date,
+          "updatedAt": Date
         }
         // More blocks...
       ],
-      "entryBlock": "String",
-      "createdAt": "Date",
-      "updatedAt": "Date",
+      "entryBlock": String,
+      "createdAt": Date,
+      "updatedAt": Date,
     },
-    "createdAt": "Date",
-    "updatedAt": "Date",
+    "createdAt": Date,
+    "updatedAt": Date,
   }
 }
 
 ```
 
 ***Sample request***
-```json
+```typescript
 {
     "blocks": [
         {
@@ -267,7 +268,7 @@ All provided ids get moved to 'original' fields (originalNextBlock, originalId e
 
 ```
 ***Sample response***
-```json
+```typescript
 {
     "activeConfiguration": {
         "_id": "67db434be74aa7a252f58934",
@@ -443,40 +444,47 @@ Retrieves all chat blocks currently in the system.
 No request body required.
 
 **Response schema:**
-```json
+```typescript
 {
   "blocks": [
     {
-      "_id": "ObjectId",
-      "type": "String", // Block type: "sendMessage", "awaitResponse", or "recognizeIntent"
+      "_id": ObjectId,
+      "type": String, // Block type: "sendMessage", "awaitResponse", or "recognizeIntent"
+      "originalId": ObjectId, // The original id which was passed on setting the configuration
       
       // Fields based on block type:
       
       // For sendMessage blocks:
-      "message": "String",
-      "nextBlock": "ObjectId",
+      "message": String,
+      "nextBlock": ObjectId,
+      "originalNextBlock": ObjectId, // The original id which was passed on setting the configuration
       
       // For awaitResponse blocks:
-      "nextBlock": "ObjectId",
+      "nextBlock": ObjectId,
+      "originalNextBlock": ObjectId, // The original id which was passed on setting the configuration
+
       
       // For recognizeIntent blocks:
       "intents": [
         {
-          "intent": "String",
-          "nextBlock": "ObjectId"
+          "intent": String,
+          "nextBlock": ObjectId
+          "originalNextBlock": ObjectId, // The original id which was passed on setting the configuration
         }
       ],
-      "errorIntentNextBlock": "ObjectId",
+      "errorIntentNextBlock": ObjectId,
+      "originalErrorIntentNextBlock": ObjectId, // The original id which was passed on setting the configuration
       
-      "createdAt": "Date",
-      "updatedAt": "Date"
+      // For all blocks
+      "createdAt": Date,
+      "updatedAt": Date
     }
     // More blocks...
   ]
 }
 ```
 ***Sample Response:***
-```json
+```typescript
 {
   "blocks": [
     {
@@ -542,17 +550,17 @@ Retrieves all available chat block types supported by the system.
 No request body required.
 
 **Response schema:**
-```json
+```typescript
 {
   "types": [
     {
-        "String" // Block type identifiers
+        String // Block type identifiers
     }
   ]
 }
 ```
 ***Sample response:***
-```json
+```typescript
 {
   "types": [
     {"sendMessage"},
@@ -576,30 +584,30 @@ Retrieves a list of all chat histories stored in the system.
 No request body required.
 
 **Response schema:**
-```json
+```typescript
 {
   "chats": [
     {
-      "_id": "ObjectId",
+      "_id": ObjectId,
       "messages": [
         {
-          "content": "String",
-          "block": "String", // ID of the block that generated/received this message
+          "content": String,
+          "block": String, // ID of the block that generated/received this message
           "isUserMessage": Boolean,
-          "sentAt": "Date"
+          "sentAt": Date
         }
       ],
-      "configuration": "String", // ID of the configuration used for this chat
-      "lastBlock": "String", // ID of the last active block
-      "createdAt": "Date",
-      "updatedAt": "Date"
+      "configuration": String, // ID of the configuration used for this chat
+      "lastBlock": String, // ID of the last active block
+      "createdAt": Date,
+      "updatedAt": Date
     }
     // More chats...
   ]
 }
 ```
 ***Sample response:***
-```json
+```typescript
 {
   "chats": [
     {
@@ -669,28 +677,28 @@ Get specific chat history
 No request body required.
 
 **Response schema:**
-```json
+```typescript
 {
   "chat":
     {
-      "_id": "ObjectId",
+      "_id": ObjectId,
       "messages": [
         {
-          "content": "String",
-          "block": "String", // ID of the block that generated/received this message
+          "content": String,
+          "block": String, // ID of the block that generated/received this message
           "isUserMessage": Boolean,
-          "sentAt": "Date"
+          "sentAt": Date
         }
       ],
-      "configuration": "String", // ID of the configuration used for this chat
-      "lastBlock": "String", // ID of the last active block
-      "createdAt": "Date",
-      "updatedAt": "Date"
+      "configuration": String, // ID of the configuration used for this chat
+      "lastBlock": String, // ID of the last active block
+      "createdAt": Date,
+      "updatedAt": Date
     }
 }
 ```
 ***Sample response:***
-```json
+```typescript
 {
   "chat":
     {
@@ -738,52 +746,51 @@ Continue existing chat by ID
 
 ### Websococket messages schemas and samples
 **Message schema:** 
-```json 
+```typescript 
 {
-    "message": "String"
+    "message": String
 }
 ```
 **Response schema:**  
 ***Conversation started***
-```json 
+```typescript 
 {
     "status": "started",
-    "chatId": "ObjectId"
+    "chatId": ObjectId
 }
 ```
 ***Chatbot message***
-```json
+```typescript
 {
     "status": "response",
-    "message": "What are you looking for today?"
+    "message": String
 }
 ```
 ***Chat ended***
-```json
+```typescript
 {
-    "status": "response",
-    "message": "What are you looking for today?"
+    "status": "finished",
 }
 ```
 ***Chat history***
-```json
+```typescript
 [
     {
-        "content": "String",
-        "_id": "ObjectId",
+        "content": String,
+        "_id": ObjectId,
         "isUserMessage": Boolean,
-        "sentAt": "Date"
+        "sentAt": Date
     },
 ]
 ```
 **Sample Message**  
-```json 
+```typescript 
 {
     "message": "What is the weather like?"
 }
 ```
 **Sample Response**
-```json 
+```typescript 
 {
     "status": "response",
     "message": "It's sunny"
