@@ -11,10 +11,10 @@ Response schema:
 
 */
 
-const OpenAIProcessor = require("../../LLM/openAI/openAIProcessor");
-const instructions = require("../../LLM/openAI/instructions");
+const OpenAIProcessor = require("../LLM/openAI/openAIProcessor");
+const instructions = require("../LLM/openAI/instructions");
 
-class ChatMovementController {
+class ChatMovementHandler {
   constructor(configuration, entryBlock, service, message, chat) {
     this.configuration = configuration;
     this.blocks = configuration.blocks;
@@ -107,4 +107,4 @@ class ChatMovementController {
   }
 }
 
-module.exports = ChatMovementController;
+module.exports = ChatMovementHandler;
